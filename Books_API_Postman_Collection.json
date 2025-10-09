@@ -1,0 +1,213 @@
+{
+    "info": {
+        "name": "Books API Collection",
+        "description": "Complete CRUD operations for Books API",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Create New Book",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"title\": \"The Alchemist\",\n    \"author\": \"Paulo Coelho\",\n    \"borrowed\": false,\n    \"user_id\": null\n}"
+                },
+                "url": {
+                    "raw": "http://localhost:8080/api/books",
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8080",
+                    "path": [
+                        "api",
+                        "books"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Get All Books",
+            "request": {
+                "method": "GET",
+                "url": {
+                    "raw": "http://localhost:8080/api/books",
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8080",
+                    "path": [
+                        "api",
+                        "books"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Get Book by ID",
+            "request": {
+                "method": "GET",
+                "url": {
+                    "raw": "http://localhost:8080/api/books/1",
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8080",
+                    "path": [
+                        "api",
+                        "books",
+                        "1"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Update Book",
+            "request": {
+                "method": "PUT",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"title\": \"The Great Gatsby - Updated\",\n    \"author\": \"F. Scott Fitzgerald\",\n    \"borrowed\": true,\n    \"user_id\": 10\n}"
+                },
+                "url": {
+                    "raw": "http://localhost:8080/api/books/1",
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8080",
+                    "path": [
+                        "api",
+                        "books",
+                        "1"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Delete Book",
+            "request": {
+                "method": "DELETE",
+                "url": {
+                    "raw": "http://localhost:8080/api/books/1",
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8080",
+                    "path": [
+                        "api",
+                        "books",
+                        "1"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Get Available Books",
+            "request": {
+                "method": "GET",
+                "url": {
+                    "raw": "http://localhost:8080/api/books/available",
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8080",
+                    "path": [
+                        "api",
+                        "books",
+                        "available"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Filter Books by Title",
+            "request": {
+                "method": "GET",
+                "url": {
+                    "raw": "http://localhost:8080/api/books?title=Harry",
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8080",
+                    "path": [
+                        "api",
+                        "books"
+                    ],
+                    "query": [
+                        {
+                            "key": "title",
+                            "value": "Harry"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Filter Books by Author",
+            "request": {
+                "method": "GET",
+                "url": {
+                    "raw": "http://localhost:8080/api/books?author=Tolkien",
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8080",
+                    "path": [
+                        "api",
+                        "books"
+                    ],
+                    "query": [
+                        {
+                            "key": "author",
+                            "value": "Tolkien"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Filter Borrowed Books",
+            "request": {
+                "method": "GET",
+                "url": {
+                    "raw": "http://localhost:8080/api/books?borrowed=true",
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8080",
+                    "path": [
+                        "api",
+                        "books"
+                    ],
+                    "query": [
+                        {
+                            "key": "borrowed",
+                            "value": "true"
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}
