@@ -158,6 +158,7 @@
 
 <script>
 import userService from '../services/userService.js';
+import { NotificationService } from '../services/notificationService.js';
 
 export default {
   name: 'Users',
@@ -208,7 +209,7 @@ export default {
         this.filteredUsers = [...this.users];
       } catch (error) {
         console.error('Error loading users:', error);
-        alert('Error loading users. Please try again.');
+        NotificationService.error('Error loading users. Please try again.');
       } finally {
         this.loading = false;
       }
@@ -237,10 +238,10 @@ export default {
         
         await this.loadUsers();
         this.cancelForm();
-        alert(this.editingUser ? 'User updated successfully!' : 'User created successfully!');
+        NotificationService.success(this.editingUser ? 'User updated successfully!' : 'User created successfully!');
       } catch (error) {
         console.error('Error saving user:', error);
-        alert('Error saving user. Please try again.');
+        NotificationService.error('Error saving user. Please try again.');
       } finally {
         this.loading = false;
       }
@@ -258,10 +259,10 @@ export default {
         try {
           await userService.delete(user.user_id);
           await this.loadUsers();
-          alert('User deleted successfully!');
+          NotificationService.success('User deleted successfully!');
         } catch (error) {
           console.error('Error deleting user:', error);
-          alert('Error deleting user. Please try again.');
+          NotificationService.error('Error deleting user. Please try again.');
         } finally {
           this.loading = false;
         }

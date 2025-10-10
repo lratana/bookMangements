@@ -208,6 +208,7 @@ import borrowService from '../services/borrowService.js';
 import bookService from '../services/bookService.js';
 import userService from '../services/userService.js';
 import librarianService from '../services/librarianService.js';
+import { NotificationService } from '../services/notificationService.js';
 
 export default {
   name: 'Borrowing',
@@ -269,7 +270,7 @@ export default {
         this.availableBooks = booksRes.data;
       } catch (error) {
         console.error('Error loading data:', error);
-        alert('Error loading data. Please try again.');
+        NotificationService.error('Error loading data. Please try again.');
       } finally {
         this.loading = false;
       }
@@ -280,10 +281,10 @@ export default {
         await borrowService.borrowBook(this.borrowForm);
         await this.loadData();
         this.cancelBorrowForm();
-        alert('Book borrowed successfully!');
+        NotificationService.success('Book borrowed successfully!');
       } catch (error) {
         console.error('Error borrowing book:', error);
-        alert('Error borrowing book. Please try again.');
+        NotificationService.error('Error borrowing book. Please try again.');
       } finally {
         this.loading = false;
       }
@@ -294,10 +295,10 @@ export default {
         try {
           await borrowService.returnBook(borrow.BorrowID);
           await this.loadData();
-          alert('Book returned successfully!');
+          NotificationService.success('Book returned successfully!');
         } catch (error) {
           console.error('Error returning book:', error);
-          alert('Error returning book. Please try again.');
+          NotificationService.error('Error returning book. Please try again.');
         } finally {
           this.loading = false;
         }

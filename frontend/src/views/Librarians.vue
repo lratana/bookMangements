@@ -144,6 +144,7 @@
 
 <script>
 import librarianService from '../services/librarianService.js';
+import { NotificationService } from '../services/notificationService.js';
 
 export default {
   name: 'Librarians',
@@ -172,7 +173,7 @@ export default {
         this.librarians = response.data;
       } catch (error) {
         console.error('Error loading librarians:', error);
-        alert('Error loading librarians. Please try again.');
+        NotificationService.error('Error loading librarians. Please try again.');
       } finally {
         this.loading = false;
       }
@@ -188,10 +189,10 @@ export default {
         
         await this.loadLibrarians();
         this.cancelForm();
-        alert(this.editingLibrarian ? 'Librarian updated successfully!' : 'Librarian created successfully!');
+        NotificationService.success(this.editingLibrarian ? 'Librarian updated successfully!' : 'Librarian created successfully!');
       } catch (error) {
         console.error('Error saving librarian:', error);
-        alert('Error saving librarian. Please try again.');
+        NotificationService.error('Error saving librarian. Please try again.');
       } finally {
         this.loading = false;
       }
@@ -212,10 +213,10 @@ export default {
         try {
           await librarianService.delete(librarian.LibrarianID);
           await this.loadLibrarians();
-          alert('Librarian deleted successfully!');
+          NotificationService.success('Librarian deleted successfully!');
         } catch (error) {
           console.error('Error deleting librarian:', error);
-          alert('Error deleting librarian. Please try again.');
+          NotificationService.error('Error deleting librarian. Please try again.');
         } finally {
           this.loading = false;
         }

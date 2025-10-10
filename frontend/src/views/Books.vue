@@ -191,6 +191,7 @@
 
 <script>
 import bookService from '../services/bookService.js';
+import { NotificationService } from '../services/notificationService.js';
 
 export default {
   name: 'Books',
@@ -243,7 +244,7 @@ export default {
         this.filteredBooks = [...this.books];
       } catch (error) {
         console.error('Error loading books:', error);
-        alert('Error loading books. Please try again.');
+        NotificationService.error('Error loading books. Please try again.');
       } finally {
         this.loading = false;
       }
@@ -281,10 +282,10 @@ export default {
         
         await this.loadBooks();
         this.cancelForm();
-        alert(this.editingBook ? 'Book updated successfully!' : 'Book created successfully!');
+        NotificationService.success(this.editingBook ? 'Book updated successfully!' : 'Book created successfully!');
       } catch (error) {
         console.error('Error saving book:', error);
-        alert('Error saving book. Please try again.');
+        NotificationService.error('Error saving book. Please try again.');
       } finally {
         this.loading = false;
       }
@@ -303,10 +304,10 @@ export default {
         try {
           await bookService.delete(book.book_id);
           await this.loadBooks();
-          alert('Book deleted successfully!');
+          NotificationService.success('Book deleted successfully!');
         } catch (error) {
           console.error('Error deleting book:', error);
-          alert('Error deleting book. Please try again.');
+          NotificationService.error('Error deleting book. Please try again.');
         } finally {
           this.loading = false;
         }

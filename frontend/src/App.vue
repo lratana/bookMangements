@@ -48,6 +48,9 @@
       <router-view />
     </main>
 
+    <!-- Notification Container -->
+    <NotificationContainer />
+
     <!-- Footer -->
     <footer class="bg-light py-3 mt-5">
       <div class="container text-center">
@@ -60,8 +63,13 @@
 </template>
 
 <script>
+import NotificationContainer from './components/NotificationContainer.vue'
+
 export default {
-  name: 'App'
+  name: 'App',
+  components: {
+    NotificationContainer
+  }
 }
 </script>
 
