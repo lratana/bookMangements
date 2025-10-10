@@ -10,7 +10,7 @@ export default (app) => {
     // Retrieve all Users
     router.get("/", users.findAll);
 
-    // Find user by email (must come before /:id route)
+
     // Find user by username (must come before /:id route)
     router.get("/username/:username", users.findByUsername);
 
