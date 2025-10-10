@@ -6,40 +6,40 @@ import Librarians from '../views/Librarians.vue';
 import Borrowing from '../views/Borrowing.vue';
 
 const routes = [
-  {
-    path: '/',
-    redirect: '/dashboard'
-  },
-  {
-    path: '/dashboard',
-    name: 'Dashboard',
-    component: Dashboard
-  },
-  {
-    path: '/books',
-    name: 'Books',
-    component: Books
-  },
-  {
-    path: '/users',
-    name: 'Users',
-    component: Users
-  },
-  {
-    path: '/librarians',
-    name: 'Librarians',
-    component: Librarians
-  },
-  {
-    path: '/borrowing',
-    name: 'Borrowing',
-    component: Borrowing
-  }
+    {
+        path: '/',
+        redirect: '/dashboard'
+    },
+    {
+        path: '/dashboard',
+        name: 'Dashboard',
+        component: Dashboard
+    },
+    {
+        path: '/books',
+        name: 'Books',
+        component: Books
+    },
+    {
+        path: '/users',
+        name: 'Users',
+        component: Users
+    },
+    {
+        path: '/librarians',
+        name: 'Librarians',
+        component: Librarians
+    },
+    {
+        path: '/borrowing',
+        name: 'Borrowing',
+        component: Borrowing
+    }
 ];
 
 const router = createRouter({
-  history: createWebHistory(),
-  routes
+    history: createWebHistory(),
+    routes
 });
 
 export default router;

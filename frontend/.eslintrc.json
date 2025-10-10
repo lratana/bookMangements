@@ -1,0 +1,18 @@
+{
+    "env": {
+        "node": true
+    },
+    "extends": [
+        "eslint:recommended",
+        "@vue/eslint-config-prettier",
+        "plugin:vue/vue3-essential"
+    ],
+    "parserOptions": {
+        "ecmaVersion": 2020
+    },
+    "rules": {
+        "no-console": "off",
+        "no-debugger": "warn",
+        "vue/no-unused-vars": "warn"
+    }
+}
