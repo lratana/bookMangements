@@ -20,44 +20,47 @@
 </template>
 
 <script>
-import { notificationState, NotificationService } from '../services/notificationService.js'
+import {
+  notificationState,
+  NotificationService,
+} from "../services/notificationService.js";
 
 export default {
-  name: 'NotificationContainer',
+  name: "NotificationContainer",
   data() {
     return {
-      notificationState
-    }
+      notificationState,
+    };
   },
   computed: {
     notifications() {
-      return this.notificationState.notifications
-    }
+      return this.notificationState.notifications;
+    },
   },
   methods: {
     getAlertClass(type) {
       const classes = {
-        success: 'alert-success',
-        error: 'alert-danger',
-        warning: 'alert-warning',
-        info: 'alert-info'
-      }
-      return classes[type] || 'alert-info'
+        success: "alert-success",
+        error: "alert-danger",
+        warning: "alert-warning",
+        info: "alert-info",
+      };
+      return classes[type] || "alert-info";
     },
     getIconClass(type) {
       const classes = {
-        success: 'fas fa-check-circle me-2',
-        error: 'fas fa-exclamation-triangle me-2',
-        warning: 'fas fa-exclamation-circle me-2',
-        info: 'fas fa-info-circle me-2'
-      }
-      return classes[type] || 'fas fa-info-circle me-2'
+        success: "fas fa-check-circle me-2",
+        error: "fas fa-exclamation-triangle me-2",
+        warning: "fas fa-exclamation-circle me-2",
+        info: "fas fa-info-circle me-2",
+      };
+      return classes[type] || "fas fa-info-circle me-2";
     },
     removeNotification(id) {
-      NotificationService.remove(id)
-    }
-  }
-}
+      NotificationService.remove(id);
+    },
+  },
+};
 </script>
 
 <style scoped>

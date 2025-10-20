@@ -2,9 +2,7 @@
   <div class="books">
     <div class="row mb-4">
       <div class="col-md-6">
-        <h1 class="h2">
-          <i class="fas fa-book"></i> Books Management
-        </h1>
+        <h1 class="h2"><i class="fas fa-book"></i> Books Management</h1>
       </div>
       <div class="col-md-6 text-end">
         <button class="btn btn-primary" @click="showAddForm = true">
@@ -30,7 +28,11 @@
         </div>
       </div>
       <div class="col-md-6">
-        <select class="form-select" v-model="filterStatus" @change="filterBooks">
+        <select
+          class="form-select"
+          v-model="filterStatus"
+          @change="filterBooks"
+        >
           <option value="">All Books</option>
           <option value="available">Available</option>
           <option value="borrowed">Borrowed</option>
@@ -41,7 +43,7 @@
     <!-- Add/Edit Book Form -->
     <div v-if="showAddForm || editingBook" class="card mb-4">
       <div class="card-header">
-        <h5 class="mb-0">{{ editingBook ? 'Edit Book' : 'Add New Book' }}</h5>
+        <h5 class="mb-0">{{ editingBook ? "Edit Book" : "Add New Book" }}</h5>
       </div>
       <div class="card-body">
         <form @submit.prevent="saveBook">
@@ -69,7 +71,7 @@
           </div>
           <div class="d-flex gap-2">
             <button type="submit" class="btn btn-success" :disabled="loading">
-              <i class="fas fa-save"></i> {{ editingBook ? 'Update' : 'Save' }}
+              <i class="fas fa-save"></i> {{ editingBook ? "Update" : "Save" }}
             </button>
             <button type="button" class="btn btn-secondary" @click="cancelForm">
               <i class="fas fa-times"></i> Cancel
@@ -88,7 +90,10 @@
           </div>
         </div>
 
-        <div v-else-if="filteredBooks.length === 0" class="text-center py-4 text-muted">
+        <div
+          v-else-if="filteredBooks.length === 0"
+          class="text-center py-4 text-muted"
+        >
           <i class="fas fa-book fa-3x mb-3"></i>
           <p>No books found</p>
         </div>
@@ -154,12 +159,20 @@
           <nav v-if="totalPages > 1">
             <ul class="pagination justify-content-center">
               <li class="page-item" :class="{ disabled: currentPage === 1 }">
-                <button class="page-link" @click="currentPage = 1" :disabled="currentPage === 1">
+                <button
+                  class="page-link"
+                  @click="currentPage = 1"
+                  :disabled="currentPage === 1"
+                >
                   First
                 </button>
               </li>
               <li class="page-item" :class="{ disabled: currentPage === 1 }">
-                <button class="page-link" @click="currentPage--" :disabled="currentPage === 1">
+                <button
+                  class="page-link"
+                  @click="currentPage--"
+                  :disabled="currentPage === 1"
+                >
                   Previous
                 </button>
               </li>
@@ -169,15 +182,31 @@
                 class="page-item"
                 :class="{ active: page === currentPage }"
               >
-                <button class="page-link" @click="currentPage = page">{{ page }}</button>
+                <button class="page-link" @click="currentPage = page">
+                  {{ page }}
+                </button>
               </li>
-              <li class="page-item" :class="{ disabled: currentPage === totalPages }">
-                <button class="page-link" @click="currentPage++" :disabled="currentPage === totalPages">
+              <li
+                class="page-item"
+                :class="{ disabled: currentPage === totalPages }"
+              >
+                <button
+                  class="page-link"
+                  @click="currentPage++"
+                  :disabled="currentPage === totalPages"
+                >
                   Next
                 </button>
               </li>
-              <li class="page-item" :class="{ disabled: currentPage === totalPages }">
-                <button class="page-link" @click="currentPage = totalPages" :disabled="currentPage === totalPages">
+              <li
+                class="page-item"
+                :class="{ disabled: currentPage === totalPages }"
+              >
+                <button
+                  class="page-link"
+                  @click="currentPage = totalPages"
+                  :disabled="currentPage === totalPages"
+                >
                   Last
                 </button>
               </li>
@@ -190,11 +219,11 @@
 </template>
 
 <script>
-import bookService from '../services/bookService.js';
-import { NotificationService } from '../services/notificationService.js';
+import bookService from "../services/bookService.js";
+import { NotificationService } from "../services/notificationService.js";
 
 export default {
-  name: 'Books',
+  name: "Books",
   data() {
     return {
       books: [],
@@ -202,15 +231,15 @@ export default {
       loading: false,
       showAddForm: false,
       editingBook: null,
-      searchQuery: '',
-      filterStatus: '',
+      searchQuery: "",
+      filterStatus: "",
       currentPage: 1,
       itemsPerPage: 10,
       bookForm: {
-        title: '',
-        author: ''
-      }
-    }
+        title: "",
+        author: "",
+      },
+    };
   },
   computed: {
     totalPages() {
@@ -225,12 +254,12 @@ export default {
       const pages = [];
       const start = Math.max(1, this.currentPage - 2);
       const end = Math.min(this.totalPages, this.currentPage + 2);
-      
+
       for (let i = start; i <= end; i++) {
         pages.push(i);
       }
       return pages;
-    }
+    },
   },
   async mounted() {
     await this.loadBooks();
@@ -243,8 +272,8 @@ export default {
         this.books = response.data;
         this.filteredBooks = [...this.books];
       } catch (error) {
-        console.error('Error loading books:', error);
-        NotificationService.error('Error loading books. Please try again.');
+        console.error("Error loading books:", error);
+        NotificationService.error("Error loading books. Please try again.");
       } finally {
         this.loading = false;
       }
@@ -255,17 +284,18 @@ export default {
       // Search filter
       if (this.searchQuery) {
         const query = this.searchQuery.toLowerCase();
-        filtered = filtered.filter(book =>
-          book.title.toLowerCase().includes(query) ||
-          book.author.toLowerCase().includes(query)
+        filtered = filtered.filter(
+          (book) =>
+            book.title.toLowerCase().includes(query) ||
+            book.author.toLowerCase().includes(query)
         );
       }
 
       // Status filter
-      if (this.filterStatus === 'available') {
-        filtered = filtered.filter(book => !book.borrowed);
-      } else if (this.filterStatus === 'borrowed') {
-        filtered = filtered.filter(book => book.borrowed);
+      if (this.filterStatus === "available") {
+        filtered = filtered.filter((book) => !book.borrowed);
+      } else if (this.filterStatus === "borrowed") {
+        filtered = filtered.filter((book) => book.borrowed);
       }
 
       this.filteredBooks = filtered;
@@ -279,13 +309,17 @@ export default {
         } else {
           await bookService.create(this.bookForm);
         }
-        
+
         await this.loadBooks();
         this.cancelForm();
-        NotificationService.success(this.editingBook ? 'Book updated successfully!' : 'Book created successfully!');
+        NotificationService.success(
+          this.editingBook
+            ? "Book updated successfully!"
+            : "Book created successfully!"
+        );
       } catch (error) {
-        console.error('Error saving book:', error);
-        NotificationService.error('Error saving book. Please try again.');
+        console.error("Error saving book:", error);
+        NotificationService.error("Error saving book. Please try again.");
       } finally {
         this.loading = false;
       }
@@ -294,7 +328,7 @@ export default {
       this.editingBook = book;
       this.bookForm = {
         title: book.title,
-        author: book.author
+        author: book.author,
       };
       this.showAddForm = false;
     },
@@ -304,10 +338,26 @@ export default {
         try {
           await bookService.delete(book.book_id);
           await this.loadBooks();
-          NotificationService.success('Book deleted successfully!');
+          NotificationService.success("Book deleted successfully!");
         } catch (error) {
-          console.error('Error deleting book:', error);
-          NotificationService.error('Error deleting book. Please try again.');
+          console.error("Error deleting book:", error);
+
+          // Handle specific error messages from the backend
+          if (
+            error.response &&
+            error.response.data &&
+            error.response.data.message
+          ) {
+            NotificationService.error(error.response.data.message);
+          } else if (error.response && error.response.status === 400) {
+            NotificationService.error(
+              "Cannot delete this book. It may be currently borrowed or have borrow history."
+            );
+          } else if (error.response && error.response.status === 404) {
+            NotificationService.error("Book not found.");
+          } else {
+            NotificationService.error("Error deleting book. Please try again.");
+          }
         } finally {
           this.loading = false;
         }
@@ -317,16 +367,16 @@ export default {
       this.showAddForm = false;
       this.editingBook = null;
       this.bookForm = {
-        title: '',
-        author: ''
+        title: "",
+        author: "",
       };
     },
     formatDate(dateString) {
-      if (!dateString) return 'N/A';
+      if (!dateString) return "N/A";
       return new Date(dateString).toLocaleDateString();
-    }
-  }
-}
+    },
+  },
+};
 </script>
 
 <style scoped>

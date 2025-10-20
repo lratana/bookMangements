@@ -13,6 +13,12 @@
     "rules": {
         "no-console": "off",
         "no-debugger": "warn",
-        "vue/no-unused-vars": "warn"
+        "vue/no-unused-vars": "warn",
+        "prettier/prettier": [
+            {
+                "singleQuote": true,
+                "parser": "flow"
+            }
+        ]
     }
 }
