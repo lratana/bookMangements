@@ -101,72 +101,90 @@ export const borrowBook = (req, res) => {
         });
 };
 
-// Return a book (Update borrow record)
+// Return a book (Update borrow record) - Raw SQL Version to bypass Sequelize issues
 export const returnBook = (req, res) => {
     const borrowId = req.params.id;
-    const returnDate = req.body.ReturnBookDate || new Date().toISOString().split('T')[0];
+    const returnDate = (req.body && req.body.ReturnBookDate) || new Date().toISOString().split('T')[0];
 
-    // Find the borrow record
-    Borrow.findByPk(borrowId)
-        .then((borrow) => {
-            if (!borrow) {
-                res.status(404).send({
+    console.log(`[DEBUG] Starting returnBook for BorrowID: ${borrowId}`);
+    console.log(`[DEBUG] Request body:`, req.body);
+    console.log(`[DEBUG] Return date:`, returnDate);
+
+    // Use raw SQL to avoid Sequelize association issues
+    const sequelize = db.sequelize;
+
+    // Step 1: Check if borrow record exists and is currently borrowed
+    sequelize.query(
+        'SELECT "BorrowID", "UserID", "LibrarianID", "BookId", "BorrowBookDate", "IsBorrow", "createdAt" FROM "borrows" WHERE "BorrowID" = :borrowId',
+        {
+            replacements: { borrowId: borrowId },
+            type: sequelize.QueryTypes.SELECT
+        }
+    )
+        .then((results) => {
+            console.log(`[DEBUG] Found borrow records:`, results);
+
+            if (!results || results.length === 0) {
+                return res.status(404).send({
                     message: `Cannot find Borrow record with BorrowID=${borrowId}.`,
                 });
-                return;
             }
+
+            const borrow = results[0];
 
             if (!borrow.IsBorrow) {
-                res.status(400).send({
+                return res.status(400).send({
                     message: "Book has already been returned!",
                 });
-                return;
             }
 
-            // Update the borrow record
-            return Borrow.update(
+            console.log(`[DEBUG] Updating borrow record to returned status...`);
+
+            // Step 2: Update the borrow record using raw SQL
+            return sequelize.query(
+                'UPDATE "borrows" SET "ReturnBookDate" = :returnDate, "IsBorrow" = false, "updatedAt" = NOW() WHERE "BorrowID" = :borrowId',
                 {
-                    ReturnBookDate: returnDate,
-                    IsBorrow: false
-                },
-                { where: { BorrowID: borrowId } }
-            ).then(() => borrow);
-        })
-        .then((borrow) => {
-            // Update the book status to available
-            return Book.update(
-                {
-                    borrowed: false,
-                    user_id: null
-                },
-                { where: { book_id: borrow.BookId } }
+                    replacements: {
+                        returnDate: returnDate,
+                        borrowId: borrowId
+                    },
+                    type: sequelize.QueryTypes.UPDATE
+                }
             ).then(() => {
-                // Return the updated borrow record with full details
-                return Borrow.findByPk(borrowId, {
-                    include: [
-                        {
-                            model: User,
-                            as: 'user',
-                            attributes: ['user_id', 'user_name', 'createdAt', 'updatedAt']
-                        },
-                        {
-                            model: Librarian,
-                            as: 'librarian',
-                            attributes: ['LibrarianID', 'LibrarianName', 'createdAt', 'updatedAt']
-                        },
-                        {
-                            model: Book,
-                            as: 'book',
-                            attributes: ['book_id', 'title', 'author', 'borrowed', 'createdAt', 'updatedAt']
-                        }
-                    ]
+                console.log(`[DEBUG] Successfully updated borrow record`);
+
+                // Step 3: Update the book status using raw SQL
+                console.log(`[DEBUG] Updating book status for BookId: ${borrow.BookId}`);
+                return sequelize.query(
+                    'UPDATE "books" SET "borrowed" = false, "user_id" = NULL, "updatedAt" = NOW() WHERE "book_id" = :bookId',
+                    {
+                        replacements: { bookId: borrow.BookId },
+                        type: sequelize.QueryTypes.UPDATE
+                    }
+                ).then(() => {
+                    console.log(`[DEBUG] Successfully updated book status`);
+
+                    // Step 4: Return success response
+                    const response = {
+                        BorrowID: borrow.BorrowID,
+                        UserID: borrow.UserID,
+                        LibrarianID: borrow.LibrarianID,
+                        BookId: borrow.BookId,
+                        BorrowBookDate: borrow.BorrowBookDate,
+                        ReturnBookDate: returnDate,
+                        IsBorrow: false,
+                        createdAt: borrow.createdAt,
+                        updatedAt: new Date().toISOString(),
+                        message: "Book returned successfully"
+                    };
+
+                    console.log(`[DEBUG] Sending response:`, response);
+                    res.send(response);
                 });
             });
         })
-        .then((updatedBorrow) => {
-            res.send(updatedBorrow);
-        })
         .catch((err) => {
+            console.error(`[ERROR] returnBook failed:`, err.message, err.stack);
             res.status(500).send({
                 message: err.message || "Error returning book with BorrowID=" + borrowId,
             });
@@ -271,6 +289,193 @@ export const findAll = (req, res) => {
         .catch((err) => {
             res.status(500).send({
                 message: err.message || "Some error occurred while retrieving borrow records.",
+            });
+        });
+};
+
+// Update a Borrow record
+export const updateBorrow = (req, res) => {
+    const borrowId = req.params.id;
+
+    console.log(`[DEBUG] Starting updateBorrow for BorrowID: ${borrowId}`);
+    console.log(`[DEBUG] Request body:`, req.body);
+
+    // Validate required fields if being updated
+    if (req.body.UserID && !req.body.UserID) {
+        res.status(400).send({
+            message: "User ID cannot be empty!",
+        });
+        return;
+    }
+
+    if (req.body.LibrarianID && !req.body.LibrarianID) {
+        res.status(400).send({
+            message: "Librarian ID cannot be empty!",
+        });
+        return;
+    }
+
+    if (req.body.BookId && !req.body.BookId) {
+        res.status(400).send({
+            message: "Book ID cannot be empty!",
+        });
+        return;
+    }
+
+    // First check if the borrow record exists
+    Borrow.findByPk(borrowId)
+        .then((borrow) => {
+            if (!borrow) {
+                return res.status(404).send({
+                    message: `Cannot find Borrow record with BorrowID=${borrowId}.`,
+                });
+            }
+
+            console.log(`[DEBUG] Found borrow record:`, borrow.toJSON());
+
+            // Prepare update object with only provided fields
+            const updateData = {};
+
+            if (req.body.UserID !== undefined) updateData.UserID = req.body.UserID;
+            if (req.body.LibrarianID !== undefined) updateData.LibrarianID = req.body.LibrarianID;
+            if (req.body.BookId !== undefined) updateData.BookId = req.body.BookId;
+            if (req.body.BorrowBookDate !== undefined) updateData.BorrowBookDate = req.body.BorrowBookDate;
+            if (req.body.ReturnBookDate !== undefined) updateData.ReturnBookDate = req.body.ReturnBookDate;
+            if (req.body.IsBorrow !== undefined) updateData.IsBorrow = req.body.IsBorrow;
+
+            console.log(`[DEBUG] Update data:`, updateData);
+
+            // If BookId is being changed, we need to handle book status updates
+            if (req.body.BookId && req.body.BookId !== borrow.BookId) {
+                console.log(`[DEBUG] BookId is being changed from ${borrow.BookId} to ${req.body.BookId}`);
+
+                // Check if new book exists and is available (if the borrow is still active)
+                if (borrow.IsBorrow) {
+                    return Book.findByPk(req.body.BookId)
+                        .then((newBook) => {
+                            if (!newBook) {
+                                return res.status(404).send({
+                                    message: "New book not found!",
+                                });
+                            }
+
+                            if (newBook.borrowed && newBook.book_id !== borrow.BookId) {
+                                return res.status(400).send({
+                                    message: "New book is already borrowed by someone else!",
+                                });
+                            }
+
+                            // Update old book to available
+                            return Book.update(
+                                { borrowed: false, user_id: null },
+                                { where: { book_id: borrow.BookId } }
+                            ).then(() => {
+                                // Update new book to borrowed
+                                return Book.update(
+                                    { borrowed: true, user_id: borrow.UserID },
+                                    { where: { book_id: req.body.BookId } }
+                                );
+                            });
+                        });
+                }
+            }
+
+            // If UserID is being changed and book is currently borrowed, update book's user_id
+            if (req.body.UserID && req.body.UserID !== borrow.UserID && borrow.IsBorrow) {
+                console.log(`[DEBUG] UserID is being changed from ${borrow.UserID} to ${req.body.UserID}`);
+
+                // Check if new user exists
+                return User.findByPk(req.body.UserID)
+                    .then((newUser) => {
+                        if (!newUser) {
+                            return res.status(404).send({
+                                message: "New user not found!",
+                            });
+                        }
+
+                        // Update book's user_id
+                        return Book.update(
+                            { user_id: req.body.UserID },
+                            { where: { book_id: borrow.BookId } }
+                        );
+                    });
+            }
+
+            // If IsBorrow is being changed, handle book status
+            if (req.body.IsBorrow !== undefined && req.body.IsBorrow !== borrow.IsBorrow) {
+                console.log(`[DEBUG] IsBorrow is being changed from ${borrow.IsBorrow} to ${req.body.IsBorrow}`);
+
+                if (req.body.IsBorrow === false) {
+                    // Book is being returned
+                    return Book.update(
+                        { borrowed: false, user_id: null },
+                        { where: { book_id: borrow.BookId } }
+                    );
+                } else {
+                    // Book is being borrowed again
+                    return Book.update(
+                        { borrowed: true, user_id: borrow.UserID },
+                        { where: { book_id: borrow.BookId } }
+                    );
+                }
+            }
+
+            return Promise.resolve();
+        })
+        .then(() => {
+            // Perform the borrow record update
+            return Borrow.update(updateData, {
+                where: { BorrowID: borrowId },
+            });
+        })
+        .then((num) => {
+            if (num == 1) {
+                console.log(`[DEBUG] Borrow record updated successfully`);
+
+                // Return the updated record with associated data
+                return Borrow.findByPk(borrowId, {
+                    include: [
+                        {
+                            model: User,
+                            as: 'user',
+                            attributes: ['user_id', 'user_name', 'createdAt', 'updatedAt'],
+                            required: false
+                        },
+                        {
+                            model: Librarian,
+                            as: 'librarian',
+                            attributes: ['LibrarianID', 'LibrarianName', 'Gender', 'Phone', 'Address', 'createdAt', 'updatedAt'],
+                            required: false
+                        },
+                        {
+                            model: Book,
+                            as: 'book',
+                            attributes: ['book_id', 'title', 'author', 'borrowed', 'user_id', 'createdAt', 'updatedAt'],
+                            required: false
+                        }
+                    ]
+                }).then((updatedBorrow) => {
+                    if (updatedBorrow) {
+                        res.send({
+                            message: "Borrow record updated successfully!",
+                            data: updatedBorrow
+                        });
+                    } else {
+                        res.status(404).send({
+                            message: `Cannot find updated Borrow record with BorrowID=${borrowId}.`,
+                        });
+                    }
+                });
+            } else {
+                res.status(404).send({
+                    message: `Cannot update Borrow record with BorrowID=${borrowId}. Maybe record was not found or req.body is empty!`,
+                });
+            }
+        })
+        .catch((err) => {
+            console.error(`[ERROR] updateBorrow failed:`, err.message, err.stack);
+            res.status(500).send({
+                message: err.message || "Error updating Borrow record with BorrowID=" + borrowId,
             });
         });
 };

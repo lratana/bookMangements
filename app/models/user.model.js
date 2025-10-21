@@ -10,6 +10,23 @@ export default (sequelize, Sequelize) => {
             allowNull: false,
             unique: true,
         },
+        email: {
+            type: Sequelize.STRING,
+            allowNull: true,
+            unique: true,
+            validate: {
+                isEmail: true
+            }
+        },
+        password: {
+            type: Sequelize.STRING,
+            allowNull: true, // Making it nullable for backward compatibility
+        },
+        role: {
+            type: Sequelize.ENUM('user', 'admin'),
+            defaultValue: 'user',
+            allowNull: false
+        }
     }, {
         // Enable automatic timestamp fields (createdAt, updatedAt)
         timestamps: true,

@@ -1,4 +1,6 @@
 import db from "../models/index.js";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
 const Op = db.Sequelize.Op;
 const User = db.users;
@@ -16,22 +18,184 @@ export const create = (req, res) => {
     // Create a User
     const user = {
         user_name: req.body.user_name,
+        email: req.body.email || null,
+        password: req.body.password || null,
+        role: req.body.role || 'user'
     };
+
+    // Hash password if provided
+    if (user.password) {
+        const saltRounds = 10;
+        user.password = bcrypt.hashSync(user.password, saltRounds);
+    }
 
     // Save User in the database
     User.create(user)
         .then((data) => {
-            // Return the created user with proper timestamps
-            res.send(data);
+            // Remove password from response
+            const userResponse = { ...data.toJSON() };
+            delete userResponse.password;
+            res.send(userResponse);
         })
         .catch((err) => {
             if (err.name === 'SequelizeUniqueConstraintError') {
                 res.status(400).send({
-                    message: "User name already exists. Please choose a different name.",
+                    message: "User name or email already exists. Please choose different credentials.",
                 });
             } else {
                 res.status(500).send({
                     message: err.message || "Some error occurred while creating the User.",
+                });
+            }
+        });
+};
+
+// User Login
+export const login = (req, res) => {
+    console.log('[DEBUG] Login function called with body:', req.body);
+
+    const { user_name, email, password } = req.body;
+
+    // Validate request
+    if ((!user_name && !email) || !password) {
+        res.status(400).send({
+            message: "Username/Email and password are required!",
+        });
+        return;
+    }
+
+    // Find user by username or email
+    let whereCondition = {};
+    if (user_name) {
+        whereCondition.user_name = user_name;
+    } else if (email) {
+        whereCondition.email = email;
+    }
+
+    User.findOne({ where: whereCondition })
+        .then((user) => {
+            if (!user) {
+                return res.status(401).send({
+                    message: "Invalid credentials!",
+                });
+            }
+
+            // Check if user has a password set
+            if (!user.password) {
+                return res.status(401).send({
+                    message: "Account does not have password authentication enabled. Please contact administrator.",
+                });
+            }
+
+            // Verify password
+            const isPasswordValid = bcrypt.compareSync(password, user.password);
+            if (!isPasswordValid) {
+                return res.status(401).send({
+                    message: "Invalid credentials!",
+                });
+            }
+
+            // Generate JWT token
+            const token = jwt.sign(
+                {
+                    user_id: user.user_id,
+                    user_name: user.user_name,
+                    email: user.email,
+                    role: user.role
+                },
+                process.env.JWT_SECRET || "your-secret-key",
+                { expiresIn: "24h" }
+            );
+
+            // Return user info and token (without password)
+            res.send({
+                message: "Login successful!",
+                user: {
+                    user_id: user.user_id,
+                    user_name: user.user_name,
+                    email: user.email,
+                    role: user.role,
+                    createdAt: user.createdAt,
+                    updatedAt: user.updatedAt
+                },
+                token: token
+            });
+        })
+        .catch((err) => {
+            res.status(500).send({
+                message: err.message || "Error during login process.",
+            });
+        });
+};
+
+// User Registration
+export const register = (req, res) => {
+    console.log('[DEBUG] Register function called with body:', req.body);
+
+    // Validate request
+    if (!req.body.user_name || !req.body.password) {
+        res.status(400).send({
+            message: "Username and password are required!",
+        });
+        return;
+    }
+
+    if (req.body.password.length < 6) {
+        res.status(400).send({
+            message: "Password must be at least 6 characters long!",
+        });
+        return;
+    }
+
+    // Create a User
+    const user = {
+        user_name: req.body.user_name,
+        email: req.body.email || null,
+        password: req.body.password,
+        role: req.body.role || 'user'
+    };
+
+    // Hash password
+    const saltRounds = 10;
+    user.password = bcrypt.hashSync(user.password, saltRounds);
+
+    // Save User in the database
+    User.create(user)
+        .then((data) => {
+            // Generate JWT token for automatic login after registration
+            const token = jwt.sign(
+                {
+                    user_id: data.user_id,
+                    user_name: data.user_name,
+                    email: data.email,
+                    role: data.role
+                },
+                process.env.JWT_SECRET || "your-secret-key",
+                { expiresIn: "24h" }
+            );
+
+            // Return user info and token (without password)
+            res.status(201).send({
+                message: "User registered successfully!",
+                user: {
+                    user_id: data.user_id,
+                    user_name: data.user_name,
+                    email: data.email,
+                    role: data.role,
+                    createdAt: data.createdAt,
+                    updatedAt: data.updatedAt
+                },
+                token: token
+            });
+        })
+        .catch((err) => {
+            if (err.name === 'SequelizeUniqueConstraintError') {
+                res.status(400).send({
+                    message: "User name or email already exists. Please choose different credentials.",
+                });
+            } else {
+                res.status(500).send({
+                    message: err.message || "Some error occurred while registering the User.",
                 });
             }
         });
@@ -51,7 +215,10 @@ export const findAll = (req, res) => {
     // If no conditions, condition will be an empty object which means get all
     const whereClause = Object.keys(condition).length > 0 ? condition : null;
 
-    User.findAll({ where: whereClause })
+    User.findAll({
+        where: whereClause,
+        attributes: { exclude: ['password'] } // Exclude password from response
+    })
         .then((data) => {
             res.send(data);
         })
@@ -66,7 +233,9 @@ export const findAll = (req, res) => {
 export const findOne = (req, res) => {
     const user_id = req.params.id;
 
-    User.findByPk(user_id)
+    User.findByPk(user_id, {
+        attributes: { exclude: ['password'] } // Exclude password from response
+    })
         .then((data) => {
             if (data) {
                 res.send(data);
@@ -166,7 +335,10 @@ export const deleteAll = (req, res) => {
 export const findByUsername = (req, res) => {
     const user_name = req.params.username;
 
-    User.findOne({ where: { user_name: user_name } })
+    User.findOne({
+        where: { user_name: user_name },
+        attributes: { exclude: ['password'] } // Exclude password from response
+    })
         .then((data) => {
             if (data) {
                 res.send(data);
