@@ -18,6 +18,12 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Add request logging middleware
+app.use((req, res, next) => {
+    console.log(`[REQUEST] ${req.method} ${req.url} - ${new Date().toISOString()}`);
+    next();
+});
+
 // Simple route
 app.get("/", (req, res) => {
     res.json({ message: "Welcome to the Tutorial Application." });

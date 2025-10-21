@@ -33,4 +33,37 @@ db.users.hasMany(db.books, {
     as: 'books'
 });
 
+// Define associations between books and borrows
+db.books.hasMany(db.borrows, {
+    foreignKey: 'BookId',
+    as: 'borrows'
+});
+
+db.borrows.belongsTo(db.books, {
+    foreignKey: 'BookId',
+    as: 'book'
+});
+
+// Define associations between users and borrows
+db.users.hasMany(db.borrows, {
+    foreignKey: 'UserID',
+    as: 'borrows'
+});
+
+db.borrows.belongsTo(db.users, {
+    foreignKey: 'UserID',
+    as: 'user'
+});
+
+// Define associations between librarians and borrows
+db.librarians.hasMany(db.borrows, {
+    foreignKey: 'LibrarianID',
+    as: 'borrows'
+});
+
+db.borrows.belongsTo(db.librarians, {
+    foreignKey: 'LibrarianID',
+    as: 'librarian'
+});
+
 export default db;

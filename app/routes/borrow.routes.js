@@ -10,6 +10,9 @@ export default (app) => {
     // Return a book
     router.put("/return/:id", borrows.returnBook);
 
+    // Update a borrow record
+    router.put("/:id", borrows.updateBorrow);
+
     // Get all borrow records
     router.get("/", borrows.findAll);
 

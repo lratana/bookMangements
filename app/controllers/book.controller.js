@@ -168,23 +168,102 @@ export const update = (req, res) => {
 export const deleteOne = (req, res) => {
     const book_id = req.params.id;
 
-    Book.destroy({
-        where: { book_id: book_id },
-    })
-        .then((num) => {
-            if (num == 1) {
-                res.send({
-                    message: "Book was deleted successfully!",
+    console.log(`[DEBUG] Attempting to delete book with ID: ${book_id}`);
+
+    // First check if the book exists and its current status
+    Book.findByPk(book_id)
+        .then(async (book) => {
+            if (!book) {
+                return res.status(404).send({
+                    message: `Book with book_id=${book_id} not found!`,
                 });
-            } else {
-                res.send({
-                    message: `Cannot delete Book with book_id=${book_id}. Maybe Book was not found!`,
+            }
+
+            console.log(`[DEBUG] Found book:`, book.toJSON());
+
+            // Check if the book is currently borrowed
+            if (book.borrowed) {
+                return res.status(400).send({
+                    message: `Cannot delete book "${book.title}" because it is currently borrowed. Please return the book first.`,
                 });
+            }
+
+            try {
+                // Check if the book has any borrow history using multiple possible column names
+                const borrowHistoryQueries = [
+                    'SELECT COUNT(*) as count FROM "borrows" WHERE "BookId" = :bookId',
+                    'SELECT COUNT(*) as count FROM "borrows" WHERE "book_id" = :bookId',
+                    'SELECT COUNT(*) as count FROM borrows WHERE "BookId" = :bookId',
+                    'SELECT COUNT(*) as count FROM borrows WHERE book_id = :bookId'
+                ];
+
+                let borrowCount = 0;
+                let querySuccess = false;
+
+                for (const query of borrowHistoryQueries) {
+                    try {
+                        const result = await db.sequelize.query(query, {
+                            replacements: { bookId: book_id },
+                            type: db.sequelize.QueryTypes.SELECT
+                        });
+                        borrowCount = parseInt(result[0].count);
+                        querySuccess = true;
+                        console.log(`[DEBUG] Successfully checked borrow history with query: ${query}`);
+                        console.log(`[DEBUG] Book has ${borrowCount} borrow records`);
+                        break;
+                    } catch (queryError) {
+                        console.log(`[DEBUG] Query failed: ${query} - ${queryError.message}`);
+                        continue;
+                    }
+                }
+
+                if (!querySuccess) {
+                    console.log(`[DEBUG] All borrow history queries failed, proceeding with deletion`);
+                }
+
+                if (borrowCount > 0) {
+                    return res.status(400).send({
+                        message: `Cannot delete book "${book.title}" because it has borrow history. Books with borrow records cannot be deleted to maintain data integrity.`,
+                    });
+                }
+
+                // If no borrow history, proceed with deletion
+                const num = await Book.destroy({
+                    where: { book_id: book_id },
+                });
+
+                console.log(`[DEBUG] Deletion result: ${num} rows affected`);
+                if (num == 1) {
+                    res.send({
+                        message: "Book was deleted successfully!",
+                    });
+                } else {
+                    res.status(404).send({
+                        message: `Cannot delete Book with book_id=${book_id}. Book was not found!`,
+                    });
+                }
+
+            } catch (error) {
+                console.error(`[ERROR] Error during deletion process:`, error);
+
+                // Handle specific constraint violation errors
+                if (error.name === 'SequelizeForeignKeyConstraintError' ||
+                    error.message.includes('foreign key constraint') ||
+                    error.message.includes('borrows_BookId_fkey')) {
+                    return res.status(400).send({
+                        message: `Cannot delete book "${book.title}" because it is referenced in the borrowing system. This book has been borrowed before and cannot be deleted to maintain data integrity.`,
+                    });
+                } else {
+                    return res.status(500).send({
+                        message: error.message || "Could not delete Book with book_id=" + book_id,
+                    });
+                }
             }
         })
         .catch((err) => {
+            console.error(`[ERROR] Error finding book:`, err);
             res.status(500).send({
-                message: err.message || "Could not delete Book with book_id=" + book_id,
+                message: err.message || "Error occurred while finding Book with book_id=" + book_id,
             });
         });
 };

@@ -1,16 +1,24 @@
 <template>
   <div id="app">
-    <!-- Navigation Bar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <!-- Navigation Bar (only show if authenticated) -->
+    <nav
+      v-if="isAuthenticated"
+      class="navbar navbar-expand-lg navbar-dark bg-primary"
+    >
       <div class="container">
         <router-link class="navbar-brand" to="/">
           <i class="fas fa-book"></i> Library Management
         </router-link>
-        
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+        >
           <span class="navbar-toggler-icon"></span>
         </button>
-        
+
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="navbar-nav me-auto">
             <li class="nav-item">
@@ -23,12 +31,12 @@
                 <i class="fas fa-book"></i> Books
               </router-link>
             </li>
-            <li class="nav-item">
+            <li v-if="isAdmin" class="nav-item">
               <router-link class="nav-link" to="/users">
                 <i class="fas fa-users"></i> Users
               </router-link>
             </li>
-            <li class="nav-item">
+            <li v-if="isAdmin" class="nav-item">
               <router-link class="nav-link" to="/librarians">
                 <i class="fas fa-user-tie"></i> Librarians
               </router-link>
@@ -39,20 +47,73 @@
               </router-link>
             </li>
           </ul>
+
+          <!-- User Info & Logout -->
+          <ul class="navbar-nav">
+            <!-- Simple Logout Button (Backup) -->
+            <li class="nav-item me-2">
+              <button
+                class="btn btn-outline-light btn-sm"
+                @click="handleLogout"
+                title="Logout"
+              >
+                <i class="fas fa-sign-out-alt"></i>
+              </button>
+            </li>
+
+            <!-- User Dropdown -->
+            <li class="nav-item dropdown">
+              <a
+                class="nav-link dropdown-toggle"
+                href="#"
+                id="navbarDropdown"
+                role="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                <i class="fas fa-user"></i> {{ currentUser?.user_name }}
+                <span v-if="isAdmin" class="badge bg-warning text-dark ms-1"
+                  >Admin</span
+                >
+              </a>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li>
+                  <span class="dropdown-item-text"
+                    ><strong>{{ currentUser?.user_name }}</strong></span
+                  >
+                </li>
+                <li>
+                  <span class="dropdown-item-text text-muted">{{
+                    currentUser?.email || "No email"
+                  }}</span>
+                </li>
+                <li><hr class="dropdown-divider" /></li>
+                <li>
+                  <a
+                    class="dropdown-item"
+                    href="#"
+                    @click.prevent="handleLogout"
+                  >
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                  </a>
+                </li>
+              </ul>
+            </li>
+          </ul>
         </div>
       </div>
     </nav>
 
     <!-- Main Content -->
-    <main class="container-fluid py-4">
+    <main :class="isAuthenticated ? 'container-fluid py-4' : ''">
       <router-view />
     </main>
 
     <!-- Notification Container -->
     <NotificationContainer />
 
-    <!-- Footer -->
-    <footer class="bg-light py-3 mt-5">
+    <!-- Footer (only show if authenticated) -->
+    <footer v-if="isAuthenticated" class="bg-light py-3 mt-5">
       <div class="container text-center">
         <p class="text-muted mb-0">
           &copy; 2025 Library Management System. Built with Vue.js & Node.js
@@ -63,14 +124,49 @@
 </template>
 
 <script>
-import NotificationContainer from './components/NotificationContainer.vue'
+import NotificationContainer from "./components/NotificationContainer.vue";
+import authService from "./services/authService.js";
+import { NotificationService } from "./services/notificationService.js";
 
 export default {
-  name: 'App',
+  name: "App",
   components: {
-    NotificationContainer
-  }
-}
+    NotificationContainer,
+  },
+  data() {
+    return {
+      currentUser: null,
+      isAuthenticated: false,
+    };
+  },
+  computed: {
+    isAdmin() {
+      return this.currentUser && this.currentUser.role === "admin";
+    },
+  },
+  methods: {
+    updateAuthState() {
+      this.isAuthenticated = authService.isAuthenticated();
+      this.currentUser = authService.getCurrentUser();
+    },
+    handleLogout() {
+      authService.logout();
+      NotificationService.success("Logged out successfully");
+      this.updateAuthState();
+      this.$router.push("/login");
+    },
+  },
+  created() {
+    // Initialize auth service
+    authService.initialize();
+    this.updateAuthState();
+
+    // Listen for route changes to update auth state
+    this.$router.afterEach(() => {
+      this.updateAuthState();
+    });
+  },
+};
 </script>
 
 <style>
@@ -88,11 +184,13 @@ main {
   font-weight: bold;
 }
 
-.fade-enter-active, .fade-leave-active {
+.fade-enter-active,
+.fade-leave-active {
   transition: opacity 0.3s;
 }
 
-.fade-enter-from, .fade-leave-to {
+.fade-enter-from,
+.fade-leave-to {
   opacity: 0;
 }
 </style>
